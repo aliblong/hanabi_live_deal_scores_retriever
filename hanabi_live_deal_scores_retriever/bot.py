@@ -61,7 +61,7 @@ class Bot:
             for event in reversed(game_events):
                 event_type = event["type"]
                 if event_type == "turn":
-                    retval[game_id]["turn"] = event["num"] + 1
+                    retval[game_id]["turn"] = event["num"]
                 elif event_type == "status":
                     retval[game_id]["score"] = event["score"]
                     break
