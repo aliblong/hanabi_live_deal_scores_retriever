@@ -44,6 +44,7 @@ def main():
     logging.basicConfig(level=args.verbosity)
     bot = Bot(os.getenv("hanabi_live_username"), os.getenv("hanabi_live_password"))
     game_results = {}
+    team_captains = {}
     for deal_idx, sample_game_id in enumerate(args.sample_game_ids):
         results = bot.get_deal_scores(sample_game_id)
         # Veto all games where not every player is on their first attempt at the deal
@@ -56,6 +57,7 @@ def main():
                 players_tuple = tuple(sorted(players))
                 if players_tuple not in game_results:
                     game_results[players_tuple] = [(None, None, None)] * len(args.sample_game_ids)
+                    team_captains[players_tuple] = properties["players"][0]
                 score = properties["score"]
                 turn = properties["turn"]
                 game_results[players_tuple][deal_idx] = (game_id, score, turn)
@@ -69,4 +71,7 @@ def main():
                 for game_result in games_results
                 for game_subresult in game_result
             ]
-            writer.writerow(list(team) + flattened_games_results)
+            team_captain = team_captains[team]
+            team_with_captain_first = [team_captain] \
+                + [player for player in team if player != team_captain]
+            writer.writerow(team_with_captain_first + flattened_games_results)
