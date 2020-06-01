@@ -55,7 +55,7 @@ class Bot:
         games = self._recv_msg("gameHistoryOtherScores")
         retval = {}
 
-        for game in games:
+        for game in games['games']:
             # server doesn't allow commas in names
             players = game["playerNames"].split(", ")
             game_id = game["id"]
