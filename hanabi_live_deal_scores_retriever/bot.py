@@ -1,5 +1,7 @@
 import logging
 import json
+from time import sleep
+
 import requests
 import websocket
 
@@ -28,7 +30,16 @@ class Bot:
             header={"Cookie": f"hanabi.sid={cookies['hanabi.sid']}"},
         )
 
+    GLOBAL_RATE_LIMIT_N_MESSAGES = 100
+    GLOBAL_RATE_LIMIT_TIMEOUT_SECONDS = 2.0
+    global_rate_limit_counter = 0
+
     def _send_msg(self, msg_type, msg_payload):
+        self.global_rate_limit_counter += 1
+        # fudge factor to ensure compliance
+        if self.global_rate_limit_counter > self.GLOBAL_RATE_LIMIT_N_MESSAGES * 0.9:
+            self.global_rate_limit_counter = 0
+            sleep(self.GLOBAL_RATE_LIMIT_TIMEOUT_SECONDS * 1.1)
         self._conn.send(f"{msg_type} {json.dumps(msg_payload)}")
 
     def _recv_msg(self, msg_type):
