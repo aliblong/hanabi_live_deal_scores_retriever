@@ -14,12 +14,11 @@ from .bot import Bot
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--sample_game_ids",
-        "-g",
+        "--seeds",
+        "-s",
         required=True,
-        type=int,
         nargs='+',
-        help="For each deal, an ID of any game of that deal",
+        help="List of seeds for which to retrieve results",
     )
     parser.add_argument(
         "--output_csv_file_path",
@@ -45,8 +44,8 @@ def main():
     bot = Bot(os.getenv("hanabi_live_username"), os.getenv("hanabi_live_password"))
     game_results = {}
     team_captains = {}
-    for deal_idx, sample_game_id in enumerate(args.sample_game_ids):
-        results = bot.get_deal_scores(sample_game_id)
+    for deal_idx, seed in enumerate(args.seeds):
+        results = bot.get_deal_scores(seed)
         # Veto all games where not every player is on their first attempt at the deal
         past_participants = set()
         # Results are assumed to be in order of ascending game ID, i.e. game completion datetime.
@@ -56,7 +55,7 @@ def main():
             if not players.intersection(past_participants):
                 players_tuple = tuple(sorted(players))
                 if players_tuple not in game_results:
-                    game_results[players_tuple] = [(None, None, None)] * len(args.sample_game_ids)
+                    game_results[players_tuple] = [(None, None, None)] * len(args.seeds)
                     team_captains[players_tuple] = properties["players"][0]
                 score = properties["score"]
                 turn = properties["turn"]

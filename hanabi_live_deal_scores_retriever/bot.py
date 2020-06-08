@@ -49,15 +49,15 @@ class Bot:
             if msg[:len(msg_type)] == msg_type:
                 return json.loads(msg[len(msg_type) + 1:])
 
-    def get_deal_scores(self, game_id):
-        logger.debug("Getting scores for deals like game %d", game_id)
-        self._send_msg("historyGetDeals", {"GameID": game_id})
+    def get_deal_scores(self, seed):
+        logger.debug("Getting scores for deals like game %s", seed)
+        self._send_msg("historyGetSeed", {"seed": seed})
         games = self._recv_msg("gameHistoryOtherScores")
         retval = {}
 
         for game in games['games']:
             # server doesn't allow commas in names
-            players = game["playerNames"].split(", ")
+            players = game["playerNames"]
             game_id = game["id"]
             retval[game_id] = {}
             retval[game_id]["players"] = players
