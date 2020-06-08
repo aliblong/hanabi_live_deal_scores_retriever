@@ -49,7 +49,7 @@ def main():
         # Veto all games where not every player is on their first attempt at the deal
         past_participants = set()
         # Results are assumed to be in order of ascending game ID, i.e. game completion datetime.
-        for game_id, properties in results.items():
+        for game_id, properties in sorted(results).items():
             players = set(properties["players"])
             # if the intersection is an empty set, everyone is on their first attempt
             if not players.intersection(past_participants):
