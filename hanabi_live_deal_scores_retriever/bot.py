@@ -17,7 +17,7 @@ class Bot:
         :returns: TODO
 
         """
-        login_url = "https://hanabi.live/login"
+        login_url = "https://hanab.live/login"
         session = requests.Session()
         session.post(login_url, data={
             "username": username,
@@ -26,7 +26,7 @@ class Bot:
         })
         cookies = session.cookies.get_dict()
         self._conn = websocket.create_connection(
-            'wss://hanabi.live/ws',
+            'wss://hanab.live/ws',
             header={"Cookie": f"hanabi.sid={cookies['hanabi.sid']}"},
         )
 
@@ -59,8 +59,11 @@ class Bot:
             # server doesn't allow commas in names
             players = game["playerNames"]
             game_id = game["id"]
-            retval[game_id] = {}
-            retval[game_id]["players"] = players
+            retval[game_id] = {
+                "datetime_started": game["datetimeStarted"],
+                "datetime_ended": game["datetimeFinished"],
+                "players": players
+            }
             self._send_msg("replayCreate", {
                 "gameID": game_id,
                 "source": "id",
@@ -72,7 +75,7 @@ class Bot:
             for event in reversed(game_events):
                 event_type = event["type"]
                 if event_type == "turn":
-                    retval[game_id]["turn"] = event["num"]
+                    retval[game_id]["turns"] = event["num"]
                 elif event_type == "status":
                     retval[game_id]["score"] = event["score"]
                     break
