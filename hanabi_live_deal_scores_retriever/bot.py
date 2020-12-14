@@ -65,7 +65,7 @@ class Bot:
                 "players": players
             }
             self._send_msg("replayCreate", {
-                "gameID": game_id,
+                "databaseID": game_id,
                 "source": "id",
                 "visibility": "solo",
             })
