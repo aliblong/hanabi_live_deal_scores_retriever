@@ -62,7 +62,7 @@ class Bot:
             retval[game_id] = {
                 "datetime_started": game["datetimeStarted"],
                 "datetime_ended": game["datetimeFinished"],
-                "players": players
+                "players": players,
             }
             self._send_msg("replayCreate", {
                 "databaseID": game_id,
