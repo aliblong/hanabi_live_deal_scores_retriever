@@ -19,38 +19,34 @@ def parse_args():
         required=False,
         help="https://docs.python.org/3.8/library/logging.html#logging-levels",
     )
-    parser.add_argument(
+    competition_seeds_group = parser.add_argument_group('competition_seeds_group')
+    competition_seeds_group.add_argument(
         "--date",
         "-d",
         required=True,
         help="Date in ISO format, e.g. '2020-06-01'",
     )
-    parser.add_argument(
+    competition_seeds_group.add_argument(
         "--num_players",
         "-p",
         type=int,
         required=True,
         help="Number of players, e.g. 2",
     )
-    parser.add_argument(
+    competition_seeds_group.add_argument(
         "--num_seeds",
         "-s",
         type=int,
         required=True,
         help="Number of seeds in the competition, e.g. 4",
     )
-    parser.add_argument(
+    competition_seeds_group.add_argument(
         "--variant_id",
         "-v",
         type=int,
         required=True,
         help="ID of the variant, according to hanabi.live, e.g. 106, for Pink(6 suits)",
     )
-    parser.add_argument(
-        "--output_json_file_path",
-        "-j",
-    )
-    return parser.parse_args()
 
 
 SEED_PREFIX = "hc-"
