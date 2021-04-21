@@ -3,7 +3,8 @@ __version__ = '0.1.0'
 import argparse
 import json
 import logging
-import os
+# import os
+import subprocess
 # logger = logging.getLogger(__name__)
 
 import dotenv
@@ -19,64 +20,99 @@ def parse_args():
         required=False,
         help="https://docs.python.org/3.8/library/logging.html#logging-levels",
     )
-    competition_seeds_group = parser.add_argument_group('competition_seeds_group')
-    competition_seeds_group.add_argument(
+
+    parser.add_argument(
+        "--env_file",
+        default=".env",
+        help="https://docs.python.org/3.8/library/logging.html#logging-levels",
+    )
+
+    subparsers = parser.add_subparsers(dest='game_type')
+    comp_parser = subparsers.add_parser('comp')
+    novar_parser = subparsers.add_parser('novar')
+
+    comp_parser.add_argument(
         "--date",
         "-d",
         required=True,
         help="Date in ISO format, e.g. '2020-06-01'",
     )
-    competition_seeds_group.add_argument(
+    comp_parser.add_argument(
         "--num_players",
         "-p",
         type=int,
         required=True,
         help="Number of players, e.g. 2",
     )
-    competition_seeds_group.add_argument(
+    comp_parser.add_argument(
         "--num_seeds",
         "-s",
         type=int,
         required=True,
         help="Number of seeds in the competition, e.g. 4",
     )
-    competition_seeds_group.add_argument(
+    comp_parser.add_argument(
         "--variant_id",
         "-v",
         type=int,
         required=True,
         help="ID of the variant, according to hanabi.live, e.g. 106, for Pink(6 suits)",
     )
+    comp_parser.add_argument(
+        "--output_json_file_path",
+        "-j",
+    )
+
+    novar_subparsers = novar_parser.add_subparsers(dest='bot_op_type')
+    novar_subparsers.add_parser('batch')
+    novar_subparsers.add_parser('stream')
+
+    return parser.parse_args()
 
 
-SEED_PREFIX = "hc-"
+SEED_PREFIX = {
+    "comp": "hc-",
+    "novar": "NoVarathon-",
+}
 
 
 def main():
-    dotenv.load_dotenv()
     args = parse_args()
+    secrets = dotenv.dotenv_values(args.env_file)
     logging.basicConfig(level=args.verbosity)
-    bot = Bot(os.getenv("hanabi_live_username"), os.getenv("hanabi_live_password"))
-    seed_results = []
-    # Seed names are 1-indexed
-    for seed_idx in range(1, args.num_seeds + 1):
-        base_seed_name = f"{SEED_PREFIX}{args.date}-{seed_idx}"
-        seed_name = f"p{args.num_players}v{args.variant_id}s{base_seed_name}"
-        results = bot.get_deal_scores(seed_name)
 
-        seed_results.append({
-            "base_seed_name": base_seed_name,
-            "games": [
-                dict({"game_id": game_id}, **game_results)
-                for game_id, game_results in results.items()
-            ],
-        })
+    if args.game_type == "comp":
+        bot = Bot(secrets.get("hanabi_live_username"), secrets.get("hanabi_live_password"))
+        seed_results = []
+        # Seed names are 1-indexed
+        for seed_idx in range(1, args.num_seeds + 1):
+            base_seed_name = f"{SEED_PREFIX['comp']}{args.date}-{seed_idx}"
+            seed_name = f"p{args.num_players}v{args.variant_id}s{base_seed_name}"
+            results = bot.get_deal_scores(seed_name)
 
-    output = {
-        "num_players": args.num_players,
-        "variant_id": args.variant_id,
-        "end_date": args.date,
-        "seeds_games": seed_results,
-    }
-    with open(args.output_json_file_path, 'w') as json_file:
-        json_file.write(json.dumps(output))
+            seed_results.append({
+                "base_seed_name": base_seed_name,
+                "games": [
+                    dict({"game_id": game_id}, **game_results)
+                    for game_id, game_results in results.items()
+                ],
+            })
+
+        output = {
+            "num_players": args.num_players,
+            "variant_id": args.variant_id,
+            "end_date": args.date,
+            "seeds_games": seed_results,
+        }
+
+    hc_username = secrets.get("hanabi_competitions_username")
+    hc_password = secrets.get("hanabi_competitions_password")
+    subprocess.check_call(
+        ' '.join([
+            f'curl -u "{hc_username}:{hc_password}"',
+            '-H "Content-Type: application/json"',
+            'https://hanabi-competitions.com/games',
+            f"--data '{json.dumps(output)}'",
+        ]),
+        shell=True,
+    )
