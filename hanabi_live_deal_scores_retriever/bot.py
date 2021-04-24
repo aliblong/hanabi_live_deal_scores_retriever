@@ -81,6 +81,21 @@ class Bot:
                     break
             self._send_msg("tableUnattend", {"tableID": table["tableID"]})
         return retval
+
+SHARED_REPLAY_MSG_PATTERN = re.compile("^Shared replay for game #(\d+)")
+
+
+    # Async? What's that? 3Head
+    def await_next_game(self, seed_pattern):
+        while True:
+            msg = self._conn.recv()
+            logger.debug(msg)
+            if msg[:5] == "table":
+                content = json.loads(msg[6:])
+                match = SHARED_REPLAY_MSG_PATTERN.match(content["name"])
+                if match:
+                    game_id = match.group(1)
+
 # game_actions = json.loads(
 #     requests.get(f"https://hanabi.live/export/{game_id}").content.decode("utf-8")
 # )

@@ -1,13 +1,16 @@
 __version__ = '0.1.0'
 
 import argparse
+from collections import deque
 import json
 import logging
 # import os
 import subprocess
-# logger = logging.getLogger(__name__)
+from time import sleep
 
 import dotenv
+import websocket
+
 
 from .bot import Bot
 
@@ -81,6 +84,10 @@ def main():
     secrets = dotenv.dotenv_values(args.env_file)
     logging.basicConfig(level=args.verbosity)
 
+    logger = logging.getLogger(__name__)
+    hc_username = secrets.get("hanabi_competitions_username")
+    hc_password = secrets.get("hanabi_competitions_password")
+
     if args.game_type == "comp":
         bot = Bot(secrets.get("hanabi_live_username"), secrets.get("hanabi_live_password"))
         seed_results = []
@@ -104,15 +111,36 @@ def main():
             "end_date": args.date,
             "seeds_games": seed_results,
         }
+        upload_game(hc_username, hc_password, output)
 
-    hc_username = secrets.get("hanabi_competitions_username")
-    hc_password = secrets.get("hanabi_competitions_password")
+    elif args.bot_op_type == "stream":
+        game_queue = deque()
+        while True:
+            try:
+                bot = Bot(secrets.get("hanabi_live_username"), secrets.get("hanabi_live_password"))
+                while True:
+                    if game_queue:
+                        game_id = game_queue[0]
+                        result = bot.get_game_result(game_id)
+                        upload_game(hc_username, hc_password, result)
+                        game_queue.pop_left()
+                    else:
+                        while True:
+
+
+
+            except websocket.WebSocketException:
+                logger.error("Websocket connection closed")
+                sleep(5)
+
+
+def upload_game(username, password, json_data):
     subprocess.check_call(
         ' '.join([
-            f'curl -u "{hc_username}:{hc_password}"',
+            f'curl -u "{username}:{password}"',
             '-H "Content-Type: application/json"',
             'https://hanabi-competitions.com/games',
-            f"--data '{json.dumps(output)}'",
+            f"--data '{json.dumps(json_data)}'",
         ]),
         shell=True,
     )
