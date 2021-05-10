@@ -9,6 +9,7 @@ import subprocess
 from time import sleep
 
 import dotenv
+import requests
 import websocket
 
 
@@ -114,25 +115,20 @@ def main():
         upload_game(hc_username, hc_password, output)
 
     elif args.bot_op_type == "stream":
-        game_queue = deque()
+        uploaded_game_ids = get_previously_uploaded_game_ids()
         while True:
-            try:
-                bot = Bot(secrets.get("hanabi_live_username"), secrets.get("hanabi_live_password"))
-                while True:
-                    if game_queue:
-                        game_id = game_queue[0]
-                        result = bot.get_game_result(game_id)
-                        upload_game(hc_username, hc_password, result)
-                        game_queue.pop_left()
-                    else:
-                        while True:
+            game_actions = json.loads(
+                requests.get("https://hanab.live/seed/p3v0snovarathon-000?api")
+                .content.decode("utf-8"),
+            )
+            print(game_actions)
+            sleep(5)
 
-
-
-            except websocket.WebSocketException:
-                logger.error("Websocket connection closed")
-                sleep(5)
-
+def get_previously_uploaded_game_ids():
+    return json.loads(
+        requests.get("https://hanabi-competitions.com/novarathon/game_ids")
+        .content.decode("utf-8"),
+    )
 
 def upload_game(username, password, json_data):
     subprocess.check_call(
